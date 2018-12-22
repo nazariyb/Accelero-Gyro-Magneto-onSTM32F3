@@ -197,9 +197,9 @@ int main(void)
   {
 //  read data from accelerometer
       BSP_ACCELERO_GetXYZ(buffer_accelero);
-      accelero_data.point.x = (double)(buffer_accelero[0]/16)/1000.0;
-      accelero_data.point.y = (double)(buffer_accelero[1]/16)/1000.0;
-      accelero_data.point.z = (double)(buffer_accelero[2]/16)/1000.0;
+      accelero_data.point.x = (double)(buffer_accelero[0] >> 4) / 1000.0;
+      accelero_data.point.y = (double)(buffer_accelero[1] >> 4) / 1000.0;
+      accelero_data.point.z = (double)(buffer_accelero[2] >> 4) / 1000.0;
 
       data_vector_count_length(&accelero_data);
 
@@ -221,9 +221,9 @@ int main(void)
 
 //  read data from gyroscope
       BSP_GYRO_GetXYZ(buffer_gyroscope);
-      gyro_data.point.x = (double)(buffer_gyroscope[0]);
-      gyro_data.point.y = (double)(buffer_gyroscope[1]);
-      gyro_data.point.z = (double)(buffer_gyroscope[2]);
+      gyro_data.point.x = (double)(buffer_gyroscope[0]) * 8.75 / 1000;
+      gyro_data.point.y = (double)(buffer_gyroscope[1]) * 8.75 / 1000;
+      gyro_data.point.z = (double)(buffer_gyroscope[2]) * 8.75 / 1000;
 
       data_vector_count_length(&gyro_data);
 
