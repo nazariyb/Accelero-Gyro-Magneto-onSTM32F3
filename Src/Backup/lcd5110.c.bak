@@ -8,7 +8,7 @@
 //#include "stm32f30x_gpio.h"
 //#include "stm32f30x_spi.h"
 
-#include "font6x8.h"	  // øðèôò
+#include "font6x8.h"	  // ï¿½ï¿½ï¿½ï¿½ï¿½
 
 #include <limits.h>
 #include <math.h>
@@ -284,14 +284,16 @@ int LCD5110_printf( LCD5110_display* lcd_conf, int color, char *fmt, ...)
 	char buf[100];
 	int res;
 
+	LCD5110_clear_scr(lcd_conf);
+	LCD5110_set_cursor(2, 2, lcd_conf);
 	va_list vargs;
 	va_start(vargs, fmt);
 
 	res = vsnprintf(buf, sizeof(buf), fmt, vargs);
 	LCD5110_print(buf, color, lcd_conf);
 
-	if (lcd_conf->def_scr.refresh_on_endl)
-		LCD5110_refresh(lcd_conf);
+//	if (lcd_conf->def_scr.refresh_on_endl)
+	LCD5110_refresh(lcd_conf);
 
 	va_end(vargs);
 

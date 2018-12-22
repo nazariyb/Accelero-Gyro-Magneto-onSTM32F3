@@ -67,13 +67,15 @@ void SystemClock_Config(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-LCD5110_display lcd;
+LCD5110_display lcd1;
+LCD5110_display lcd2;
+//LCD5110_display lcd3;
 
-void print_lcd(char msg[]) {
-  LCD5110_clear_scr(&lcd);
-  LCD5110_set_cursor(2, 2, &lcd);
-  LCD5110_print(msg, BLACK, &lcd);
-  LCD5110_refresh(&lcd);
+void print_lcd(LCD5110_display* lcd, char msg[]) {
+  LCD5110_clear_scr(lcd);
+  LCD5110_set_cursor(2, 2, lcd);
+  LCD5110_print(msg, BLACK, lcd);
+  LCD5110_refresh(lcd);
 }
 
 typedef struct {
@@ -135,40 +137,65 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_SPI2_Init();
+  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
-    if (BSP_ACCELERO_Init() != HAL_OK)
-    {
-        /* Initialization Error */
-        print_lcd("Error initializing HAL.");
-        while(1){}
-    }
-    if (BSP_GYRO_Init() != HAL_OK) {
-        print_lcd("Error initializing HAL.");
-        while(1){}
-    }
+  lcd1.hw_conf.spi_handle = &hspi2;
+  lcd1.hw_conf.spi_cs_pin = LCD1_CS_Pin;
+  lcd1.hw_conf.spi_cs_port = LCD1_CS_GPIO_Port;
+  lcd1.hw_conf.rst_pin = LCD1_RST_Pin;
+  lcd1.hw_conf.rst_port = LCD1_RST_GPIO_Port;
+  lcd1.hw_conf.dc_pin = LCD1_DC_Pin;
+  lcd1.hw_conf.dc_port = LCD1_DC_GPIO_Port;
+  lcd1.def_scr = lcd5110_def_scr;
 
-  lcd.hw_conf.spi_handle = &hspi2;
-  lcd.hw_conf.spi_cs_pin = LCD_CS_Pin;
-  lcd.hw_conf.spi_cs_port = LCD_CS_GPIO_Port;
-  lcd.hw_conf.rst_pin = LCD_RST_Pin;
-  lcd.hw_conf.rst_port = LCD_RST_GPIO_Port;
-  lcd.hw_conf.dc_pin = LCD_DC_Pin;
-  lcd.hw_conf.dc_port = LCD_DC_GPIO_Port;
-  lcd.def_scr = lcd5110_def_scr;
+  LCD5110_init(&lcd1.hw_conf, LCD5110_INVERTED_MODE, 0x40, 2, 3);
 
-  // LCD5110_set_cursor(18, 16, &lcd);
-  LCD5110_init(&lcd.hw_conf, LCD5110_INVERTED_MODE, 0x40, 2, 3);
+  lcd2.hw_conf.spi_handle = &hspi3;
+  lcd2.hw_conf.spi_cs_pin = LCD2_CS_Pin;
+  lcd2.hw_conf.spi_cs_port = LCD2_CS_GPIO_Port;
+  lcd2.hw_conf.rst_pin = LCD2_RST_Pin;
+  lcd2.hw_conf.rst_port = LCD2_RST_GPIO_Port;
+  lcd2.hw_conf.dc_pin = LCD2_DC_Pin;
+  lcd2.hw_conf.dc_port = LCD2_DC_GPIO_Port;
+  lcd2.def_scr = lcd5110_def_scr;
+
+  LCD5110_init(&lcd2.hw_conf, LCD5110_INVERTED_MODE, 0x40, 2, 3);
+
+//  lcd3.hw_conf.spi_handle = &hspi1;
+//  lcd3.hw_conf.spi_cs_pin = LCD3_CS_Pin;
+//  lcd3.hw_conf.spi_cs_port = LCD3_CS_GPIO_Port;
+//  lcd3.hw_conf.rst_pin = LCD3_RST_Pin;
+//  lcd3.hw_conf.rst_port = LCD3_RST_GPIO_Port;
+//  lcd3.hw_conf.dc_pin = LCD3_DC_Pin;
+//  lcd3.hw_conf.dc_port = LCD3_DC_GPIO_Port;
+//  lcd3.def_scr = lcd5110_def_scr;
+//
+//  LCD5110_init(&lcd3.hw_conf, LCD5110_INVERTED_MODE, 0x40, 2, 3);
 
   accelero_data.max_length = -INFINITY;
+  gyro_data.max_length = -INFINITY;
+
+  if (BSP_ACCELERO_Init() != HAL_OK)
+  {
+      /* Initialization Error */
+      print_lcd(&lcd1, "Error initializing HAL.");
+      while(1){}
+  }
+  if (BSP_GYRO_Init() != HAL_OK) {
+      print_lcd(&lcd2, "Error initializing HAL.");
+      while(1){}
+  }
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int16_t buffer_accelero[3] = {0};
-  int16_t buffer_gyroscope[3] = {0};
+  float buffer_gyroscope[3] = {0};
+//  print_lcd(&lcd2, "sosi pisos");
   while (1)
   {
+//  read data from accelerometer
       BSP_ACCELERO_GetXYZ(buffer_accelero);
       accelero_data.point.x = (double)(buffer_accelero[0]/16)/1000.0;
       accelero_data.point.y = (double)(buffer_accelero[1]/16)/1000.0;
@@ -176,10 +203,8 @@ int main(void)
 
       data_vector_count_length(&accelero_data);
 
-//      BSP_GYRO_GetXYZ(buffer_gyroscope);
-//      LCD5110_printf(&lcd, BLACK, "%i %i %i \n", buffer[0], buffer[1], buffer[2]);
-
-      LCD5110_printf(&lcd, BLACK, "cur:    max:\n"
+//  print it
+      LCD5110_printf(&lcd1, BLACK, "cur:    max:\n"
                                   "%1.3f %1.3f\n"
                                   "%1.3f %1.3f\n"
                                   "%1.3f %1.3f\n"
@@ -191,14 +216,32 @@ int main(void)
                      accelero_data.point.z,
                      accelero_data.max_point.z,
                      accelero_data.length
-//                     accelero_data.max_length
       );
 
-//      LCD5110_printf(&lcd, BLACK, "%i %i %i \n",
-//             (buffer_gyroscope[0]),
-//             (buffer_gyroscope[1]),
-//             (buffer_gyroscope[2])
-//             );
+
+//  read data from gyroscope
+      BSP_GYRO_GetXYZ(buffer_gyroscope);
+      gyro_data.point.x = (double)(buffer_gyroscope[0]);
+      gyro_data.point.y = (double)(buffer_gyroscope[1]);
+      gyro_data.point.z = (double)(buffer_gyroscope[2]);
+
+      data_vector_count_length(&gyro_data);
+
+//  print it
+      LCD5110_printf(&lcd2, BLACK, "cur:    max:\n"
+                                   "%1.1f %1.1f\n"
+                                   "%1.1f %1.1f\n"
+                                   "%1.1f %1.1f\n"
+                                   "len: %g\n",
+                     gyro_data.point.x,
+                     gyro_data.max_point.x,
+                     gyro_data.point.y,
+                     gyro_data.max_point.y,
+                     gyro_data.point.z,
+                     gyro_data.max_point.z,
+                     gyro_data.length
+      );
+
       HAL_Delay(1000);
 
 //      break;
