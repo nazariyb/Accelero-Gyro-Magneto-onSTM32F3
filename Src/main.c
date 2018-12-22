@@ -205,9 +205,9 @@ int main(void)
 
 //  print it
       LCD5110_printf(&lcd1, BLACK, "cur:    max:\n"
-                                  "%1.3f %1.3f\n"
-                                  "%1.3f %1.3f\n"
-                                  "%1.3f %1.3f\n"
+                                  "%7.3f %6.3f\n"
+                                  "%7.3f %6.3f\n"
+                                  "%7.3f %6.3f\n"
                                   "len: %g\n",
                      accelero_data.point.x,
                      accelero_data.max_point.x,
@@ -229,9 +229,9 @@ int main(void)
 
 //  print it
       LCD5110_printf(&lcd2, BLACK, "cur:    max:\n"
-                                   "%1.1f %1.1f\n"
-                                   "%1.1f %1.1f\n"
-                                   "%1.1f %1.1f\n"
+                                   "%6.1f %6.1f\n"
+                                   "%6.1f %6.1f\n"
+                                   "%6.1f %6.1f\n"
                                    "len: %g\n",
                      gyro_data.point.x,
                      gyro_data.max_point.x,
