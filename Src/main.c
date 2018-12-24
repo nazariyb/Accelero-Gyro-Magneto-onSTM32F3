@@ -71,6 +71,7 @@ LCD5110_display lcd1;
 LCD5110_display lcd2;
 //LCD5110_display lcd3;
 
+// clear screen and print some text on it
 void print_lcd(LCD5110_display* lcd, char msg[]) {
   LCD5110_clear_scr(lcd);
   LCD5110_set_cursor(2, 2, lcd);
@@ -78,20 +79,23 @@ void print_lcd(LCD5110_display* lcd, char msg[]) {
   LCD5110_refresh(lcd);
 }
 
+// structure for three-demential point
 typedef struct {
     double x;
     double y;
     double z;
 } POINT_3D;
 
+// structure for representation sensor's data - current and maximum ones
 typedef struct {
     POINT_3D point;
     double length;
     double max_length;
     POINT_3D max_point;
-} DATA_VECTOR;
+} data_vector_t;
 
-void data_vector_count_length(DATA_VECTOR* data_vector) {
+// count vector's length and set vector with maximum length
+void data_vector_count_length(data_vector_t* data_vector) {
     double x = data_vector->point.x;
     double y = data_vector->point.y;
     double z = data_vector->point.z;
@@ -103,8 +107,22 @@ void data_vector_count_length(DATA_VECTOR* data_vector) {
     data_vector->length = new_length;
 }
 
-DATA_VECTOR accelero_data;
-DATA_VECTOR gyro_data;
+// save data from accelerometer to vector in g(9.8) per second
+void data_vector_save_accelero_data_in_g_per_second(data_vector_t* accelero_data, int16_t* buffer_accelero) {
+    accelero_data->point.x = (double)(buffer_accelero[0] >> 4) / 1000.0;
+    accelero_data->point.y = (double)(buffer_accelero[1] >> 4) / 1000.0;
+    accelero_data->point.z = (double)(buffer_accelero[2] >> 4) / 1000.0;
+}
+
+// save data from gyroscope to vector in degrees per second
+void data_vector_save_gyro_data_in_degrees_per_second(data_vector_t* gyro_data, float* buffer_gyro) {
+    gyro_data->point.x = (double)(buffer_gyro[0]) / 1000;
+    gyro_data->point.y = (double)(buffer_gyro[1]) / 1000;
+    gyro_data->point.z = (double)(buffer_gyro[2]) / 1000;
+}
+
+data_vector_t accelero_data;
+data_vector_t gyro_data;
 /* USER CODE END 0 */
 
 /**
@@ -161,17 +179,6 @@ int main(void)
 
   LCD5110_init(&lcd2.hw_conf, LCD5110_INVERTED_MODE, 0x40, 2, 3);
 
-//  lcd3.hw_conf.spi_handle = &hspi1;
-//  lcd3.hw_conf.spi_cs_pin = LCD3_CS_Pin;
-//  lcd3.hw_conf.spi_cs_port = LCD3_CS_GPIO_Port;
-//  lcd3.hw_conf.rst_pin = LCD3_RST_Pin;
-//  lcd3.hw_conf.rst_port = LCD3_RST_GPIO_Port;
-//  lcd3.hw_conf.dc_pin = LCD3_DC_Pin;
-//  lcd3.hw_conf.dc_port = LCD3_DC_GPIO_Port;
-//  lcd3.def_scr = lcd5110_def_scr;
-//
-//  LCD5110_init(&lcd3.hw_conf, LCD5110_INVERTED_MODE, 0x40, 2, 3);
-
   accelero_data.max_length = -INFINITY;
   gyro_data.max_length = -INFINITY;
 
@@ -181,6 +188,7 @@ int main(void)
       print_lcd(&lcd1, "Error initializing HAL.");
       while(1){}
   }
+
   if (BSP_GYRO_Init() != HAL_OK) {
       print_lcd(&lcd2, "Error initializing HAL.");
       while(1){}
@@ -191,16 +199,13 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int16_t buffer_accelero[3] = {0};
-  float buffer_gyroscope[3] = {0};
-//  print_lcd(&lcd2, "sosi pisos");
+  float buffer_gyro[3] = {0};
+
   while (1)
   {
-//  read data from accelerometer
+//  read & process data from accelerometer
       BSP_ACCELERO_GetXYZ(buffer_accelero);
-      accelero_data.point.x = (double)(buffer_accelero[0] >> 4) / 1000.0;
-      accelero_data.point.y = (double)(buffer_accelero[1] >> 4) / 1000.0;
-      accelero_data.point.z = (double)(buffer_accelero[2] >> 4) / 1000.0;
-
+      data_vector_save_accelero_data_in_g_per_second(&accelero_data, &buffer_accelero);
       data_vector_count_length(&accelero_data);
 
 //  print it
@@ -219,12 +224,9 @@ int main(void)
       );
 
 
-//  read data from gyroscope
-      BSP_GYRO_GetXYZ(buffer_gyroscope);
-      gyro_data.point.x = (double)(buffer_gyroscope[0]) * 8.75 / 1000;
-      gyro_data.point.y = (double)(buffer_gyroscope[1]) * 8.75 / 1000;
-      gyro_data.point.z = (double)(buffer_gyroscope[2]) * 8.75 / 1000;
-
+//  read & process data from gyroscope
+      BSP_GYRO_GetXYZ(buffer_gyro);
+      data_vector_save_gyro_data_in_degrees_per_second(&gyro_data, &buffer_gyro);
       data_vector_count_length(&gyro_data);
 
 //  print it
